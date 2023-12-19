@@ -177,6 +177,54 @@ class CashCardApplicationTests {
     }
 
     @Test
+    @DirtiesContext
+    void shouldDeleteAnExistingCashCard() {
+        ResponseEntity<Void> deleteRes = restTemplate
+                .withBasicAuth("kumar2", "xyz789")
+                .exchange("/cashcards/102", HttpMethod.DELETE, null, Void.class);
+        assertThat(deleteRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<Void> getRes = restTemplate
+                .withBasicAuth("kumar2", "xyz789")
+                .getForEntity("/cashcards/102", Void.class);
+        assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeleteACardThatDoesNotExist() {
+        ResponseEntity<Void> res = restTemplate
+                .withBasicAuth("kumar2", "xyz789")
+                .exchange("/cashcards/96", HttpMethod.DELETE, null, Void.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeleteACardThatUserDoesNotOwn() {
+        ResponseEntity<Void> res = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/102", HttpMethod.DELETE, null, Void.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldNotDeleteWhenDeleteACardThatUserDoesNotOwn() {
+        restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/102", HttpMethod.DELETE, null, Void.class);
+
+        ResponseEntity<String> getRes = restTemplate
+                .withBasicAuth("kumar2", "xyz789")
+                .getForEntity("/cashcards/102", String.class);
+
+        assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
+        DocumentContext docContext = JsonPath.parse(getRes.getBody());
+        int id = docContext.read("$.id");
+        assertThat(id).isEqualTo(102);
+        double amount = docContext.read("$.amount");
+        assertThat(amount).isEqualTo(200.00);
+    }
+
+    @Test
     void shouldReturnUnauthorizedWhenUserIsNotAuthenticated() {
         ResponseEntity<String> res = restTemplate
                 .getForEntity("/cashcards/99", String.class);
