@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
@@ -132,6 +134,46 @@ class CashCardApplicationTests {
 
         JSONArray amounts = docContext.read("$..amount");
         assertThat(amounts).containsExactly(1.0, 123.45, 150.00);
+    }
+
+    @Test
+    @DirtiesContext
+    void shouldUpdateAnExistingCashCard() {
+        CashCard cashCardNeedsUpdate = new CashCard(null, 120.00, "sarah1");
+        HttpEntity<CashCard> request = new HttpEntity<>(cashCardNeedsUpdate);
+        ResponseEntity<Void> putRes = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/99", HttpMethod.PUT, request, Void.class);
+        assertThat(putRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<String> getRes = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .getForEntity("/cashcards/99", String.class);
+        DocumentContext docContext = JsonPath.parse(getRes.getBody());
+        int id = docContext.read("$.id");
+        assertThat(id).isEqualTo(99);
+        double amount = docContext.read("$.amount");
+        assertThat(amount).isEqualTo(120.00);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdateOnACardThatDoesNotExist() {
+        CashCard cashCardNeedsUpdate = new CashCard(null, 15.00, "sarah1");
+        HttpEntity<CashCard> request = new HttpEntity<>(cashCardNeedsUpdate);
+        ResponseEntity<Void> res = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/97", HttpMethod.PUT, request, Void.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdateOnACardThatUserDoesNotOwn() {
+        CashCard cashCardNeedsUpdate = new CashCard(null, 15.00, "sarah1");
+        HttpEntity<CashCard> request = new HttpEntity<>(cashCardNeedsUpdate);
+        ResponseEntity<Void> res = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .exchange("/cashcards/102", HttpMethod.PUT, request, Void.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
