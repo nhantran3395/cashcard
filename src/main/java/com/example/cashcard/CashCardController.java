@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Principal;
 import java.util.Optional;
 
 @RestController()
@@ -21,8 +22,8 @@ public class CashCardController {
     }
 
     @GetMapping("/{requestedId}")
-    private ResponseEntity<CashCard> findById(@PathVariable long requestedId) {
-        Optional<CashCard> cashCardOptional = cashCardRepository.findById(requestedId);
+    private ResponseEntity<CashCard> findById(@PathVariable long requestedId, Principal principal) {
+        Optional<CashCard> cashCardOptional = cashCardRepository.findByIdAndOwner(requestedId, principal.getName());
 
         if (cashCardOptional.isPresent()) {
             return ResponseEntity.ok(cashCardOptional.get());
@@ -32,14 +33,19 @@ public class CashCardController {
     }
 
     @PostMapping
-    private ResponseEntity<Void> createNew(@RequestBody CashCard newCashCardRequest) throws URISyntaxException {
+    private ResponseEntity<Void> createNew(
+            @RequestBody CashCard newCashCardRequest,
+            Principal principal
+    ) throws URISyntaxException {
+        CashCard newCashCardWithOwner = new CashCard(null, newCashCardRequest.amount(), principal.getName());
         CashCard savedCashCard = cashCardRepository.save(newCashCardRequest);
         return ResponseEntity.created(new URI("/cashcards/" + savedCashCard.id())).build();
     }
 
     @GetMapping
-    private ResponseEntity<Iterable<CashCard>> findAll(Pageable pageable) {
-        Page<CashCard> page = cashCardRepository.findAll(
+    private ResponseEntity<Iterable<CashCard>> findAll(Principal principal, Pageable pageable) {
+        Page<CashCard> page = cashCardRepository.findByOwner(
+                principal.getName(),
                 PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
