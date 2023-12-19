@@ -1,11 +1,10 @@
 package com.example.cashcard;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Optional;
 
 @RestController()
@@ -26,5 +25,11 @@ public class CashCardController {
         }
 
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping
+    private ResponseEntity<Void> createNew(@RequestBody CashCard newCashCardRequest) throws URISyntaxException {
+        CashCard savedCashCard = cashCardRepository.save(newCashCardRequest);
+        return ResponseEntity.created(new URI("/cashcards/" + savedCashCard.id())).build();
     }
 }
