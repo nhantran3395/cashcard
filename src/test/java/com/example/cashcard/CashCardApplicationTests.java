@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,7 +39,7 @@ class CashCardApplicationTests {
     }
 
     @Test
-    void shouldCreateANewCashCardWithValidPayload() throws URISyntaxException {
+    void shouldCreateANewCashCardWithValidPayload() {
         CashCard newCashCard = new CashCard(null, 10.2);
         ResponseEntity<Void> postRes = restTemplate.postForEntity("/cashcards", newCashCard, Void.class);
         URI location = postRes.getHeaders().getLocation();
