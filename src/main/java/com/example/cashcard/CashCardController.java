@@ -24,12 +24,7 @@ public class CashCardController {
     @GetMapping("/{requestedId}")
     private ResponseEntity<CashCard> findById(@PathVariable long requestedId, Principal principal) {
         Optional<CashCard> cashCardOptional = findCashCard(requestedId, principal);
-
-        if (cashCardOptional.isPresent()) {
-            return ResponseEntity.ok(cashCardOptional.get());
-        }
-
-        return ResponseEntity.notFound().build();
+        return cashCardOptional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -37,9 +32,9 @@ public class CashCardController {
             @RequestBody CashCard newCashCardRequest,
             Principal principal
     ) throws URISyntaxException {
-        CashCard newCashCardWithOwner = new CashCard(null, newCashCardRequest.amount(), principal.getName());
-        CashCard savedCashCard = cashCardRepository.save(newCashCardRequest);
-        return ResponseEntity.created(new URI("/cashcards/" + savedCashCard.id())).build();
+        CashCard newCashCardWithOwner = new CashCard(null, newCashCardRequest.getAmount(), principal.getName());
+        CashCard savedCashCard = cashCardRepository.save(newCashCardWithOwner);
+        return ResponseEntity.created(new URI("/cashcards/" + savedCashCard.getId())).build();
     }
 
     @GetMapping
@@ -68,8 +63,8 @@ public class CashCardController {
         }
 
         cashCardRepository.save(new CashCard(
-                cashCardOptional.get().id(),
-                cashCardNeedsUpdate.amount(),
+                cashCardOptional.get().getId(),
+                cashCardNeedsUpdate.getAmount(),
                 principal.getName()
         ));
         return ResponseEntity.noContent().build();
