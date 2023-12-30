@@ -37,7 +37,7 @@ public class TestJwtCreator {
                 .subject(username)
                 .issuer("http://localhost:9000")
                 .audience(List.of("cashcard-client"))
-                .claim("role", Arrays.asList("cashcard:read", "cashcard:write"));
+                .claim("scp", Arrays.asList("cashcard:read", "cashcard:write"));
         consumer.accept(builder);
         JwtEncoderParameters parameters = JwtEncoderParameters.from(builder.build());
         return this.jwtEncoder.encode(parameters).getTokenValue();
